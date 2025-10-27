@@ -22,7 +22,7 @@ class Shooter(Sprite):
         super().__init__()
 
         #BB Create the Surface and draw a triangle on it.
-        self.image = pygame.Surface((20, 30))
+        self.image = pygame.Surface((20, 30), pygame.SRCALPHA)
         self.original = self.image
         pygame.draw.polygon(self.image, (255,255,0), [(0,30),(10,0),(20,30)])
         self.rect = self.image.get_rect(center=(screenwidth/2, screenheight/2))
@@ -80,26 +80,55 @@ class Bullet(Sprite):
             print(f"Killing bullet {self.id}")
             self.kill()
 
-class Enemy(Sprite):
-    def __init__(self, id, x, y):
+class Asteroid(Sprite):
+
+    def __init__(self, id, x, y, angle=45, speed=5):
         super().__init__()
         self.id = id
+        self.location = Vector2(x, y)
+        self.direction = Vector2(0, speed).rotate(angle)
+
         self.image = pygame.Surface((30, 30))
         self.image.fill((255, 0, 0))
-        self.rect = self.image.get_rect(center=(x, y))
+        self.rect = self.image.get_rect(center=self.location)
+
+        print(f"asteroid {self.id}, loc {self.location}, dir {self.direction}")
+
+    def update(self):
+        self.location = self.location+self.direction
+        self.rect = self.image.get_rect(center=self.location)
+        #if self.id==0:
+            #print(f"new loc {self.location}, left {self.rect.left}, right {self.rect.right}, top {self.rect.top}, bottom {self.rect.bottom}")
+        #BB Wrap around when object reaches a border
+        if self.rect.bottom < 0:
+            self.rect.top = screenheight
+            self.location.update(self.rect.center)
+        elif self.rect.top>screenheight:
+            self.rect.bottom = 0
+            self.location.update(self.rect.center)
+        elif self.rect.right<0:
+            self.rect.left = screenwidth
+            self.location.update(self.rect.center)
+        elif self.rect.left>screenwidth:
+            self.rect.right = 0
+            self.location.update(self.rect.center)
 
 # Create groups
 gungroup = Group()
 bullets = Group()
-enemies = Group()
+asteroids = Group()
 
 #BB Create the gun
 gun = Shooter()
 gungroup.add(gun)
 
-# Spawn some enemies
+# Create some asteroids
 for id in range(22):
-    enemies.add(Enemy(id, random.randint(50, 950), random.randint(50, 500)))
+    x = random.randint(50, screenwidth-50)
+    y = random.randint(50, screenheight-50)
+    angle = random.randint(0, 360)
+    speed = random.uniform(0.1, 2)
+    asteroids.add(Asteroid(id, x, y, angle, speed))
 
 running = True
 pausing = False
@@ -137,6 +166,7 @@ while running:
                     gun.rotdelta = 0
 
     if not pausing:
+        asteroids.update()
         gungroup.update()
         bullets.update()
 
@@ -144,21 +174,21 @@ while running:
         #BB groupcollide(group1, group2, dokill1, dokill2, collided = None)
         #BB The dokill parameters determine if collided elements are removed
         #BB Returns dictionary of all detected collisions.
-        #BB Key is a bullet, value is a list of enemies.
+        #BB Key is a bullet, value is a list of asteroids.
         #BB If no collision occurs, returns an empty dict.
-        collision = pygame.sprite.groupcollide(bullets, enemies, False, True)
+        collision = pygame.sprite.groupcollide(bullets, asteroids, False, True)
         if len(collision)>0:
             for coll in collision:
                 print(coll.id, end=": ")
-                for enemy in collision[coll]:
-                    print(enemy.id, end=",")
+                for asteroid in collision[coll]:
+                    print(asteroid.id, end=",")
             print()
 
     #BB display all objects on the screen
-    screen.fill((0, 0, 0))
-    gungroup.draw(screen)
+    screen.fill((100, 100, 100))
     bullets.draw(screen)
-    enemies.draw(screen)
+    asteroids.draw(screen)
+    gungroup.draw(screen)
     pygame.display.flip()
 
     clock.tick(60)
