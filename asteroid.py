@@ -80,6 +80,33 @@ class Bullet(Sprite):
             print(f"Killing bullet {self.id}")
             self.kill()
 
+#BB A piece of a broken gun, when the gun is hit by an asteroid or the enemy
+class Debris(Sprite):
+
+    #BB A piece of debris is a small triangle
+    #BB Both location and direction are pygame.math.Vector2 objects
+    def __init__(self, id, location, direction):
+        super().__init__()
+        self.id = id
+        self.location = location
+        self.direction = direction
+
+        #BB Create the Surface and draw a triangle on it.
+        self.image = pygame.Surface((5, 8), pygame.SRCALPHA)
+        self.original = self.image
+        pygame.draw.polygon(self.image, (255,255,0), [(0,8),(2.5,0),(5,8)])
+        self.rect = self.image.get_rect(center=(screenwidth/2, screenheight/2))
+
+        print(f"New debris at {self.location}, dir {self.direction}, |dir| {self.direction.length()}")
+
+    def update(self):
+        self.location = self.location+self.direction
+        self.rect = self.image.get_rect(center=self.location)
+        #BB Dispose of the object when it reaches a border
+        if self.rect.bottom < 0 or self.rect.top>screenheight or self.rect.right<0 or self.rect.left>screenwidth:
+            print(f"Killing debris {self.id}")
+            self.kill()
+
 class Asteroid(Sprite):
 
     def __init__(self, id, x, y, angle=45, speed=5):
@@ -117,6 +144,7 @@ class Asteroid(Sprite):
 gungroup = Group()
 bullets = Group()
 asteroids = Group()
+debris = Group()
 
 #BB Create the gun
 gun = Shooter()
@@ -177,6 +205,7 @@ while running:
         asteroids.update()
         gungroup.update()
         bullets.update()
+        debris.update()
 
         # Detect collisions
         #BB groupcollide(group1, group2, dokill1, dokill2, collided = None)
@@ -200,13 +229,17 @@ while running:
         #BB In the future, the gun explodes and the asteroid breaks up.
         collision = pygame.sprite.groupcollide(gungroup, asteroids, True, False)
         if len(collision)>0:
-            pausing = True
+            for id in range(10):
+                speed = random.uniform(0.1, 2)
+                d = Debris(id, gun.imgvec, Vector2(0, speed).rotate(id*36))
+                debris.add(d)
 
     #BB display all objects on the screen
     screen.fill((100, 100, 100))
     bullets.draw(screen)
     asteroids.draw(screen)
     gungroup.draw(screen)
+    debris.draw(screen)
     pygame.display.flip()
 
     clock.tick(60)
