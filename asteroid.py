@@ -17,6 +17,7 @@ pygame.init()
 screen = pygame.display.set_mode((screenwidth, screenheight))
 clock = pygame.time.Clock()
 
+###########################################################################
 class Shooter(Sprite):
     """
     BB:
@@ -24,6 +25,7 @@ class Shooter(Sprite):
     Rotates
     Shoots bullets in the direction determined by its angle
     """
+###########################################################################
 
     def __init__(self):
         super().__init__()
@@ -58,7 +60,9 @@ class Shooter(Sprite):
         #BB Therefore, the rotation angle needs to be inversed.
         self.tipvec = self.origtipvec.rotate(-self.rotation)
 
+###########################################################################
 class Bullet(Sprite):
+###########################################################################
 
     #BB Both location and direction are pygame.math.Vector2 objects
     #BB Size is bullet's diameter
@@ -71,6 +75,7 @@ class Bullet(Sprite):
 
         #BB Create Surface and draw circle on it
         self.image = pygame.Surface((size, size))
+        self.orig_img = self.image
         self.rect = self.image.get_rect(center=location)
         pygame.draw.circle(self.image, (255,255,0), (size/2,size/2), size/2)
 
@@ -84,34 +89,48 @@ class Bullet(Sprite):
             print(f"Killing bullet {self.id}")
             self.kill()
 
-#BB A piece of a broken gun, when the gun is hit by an asteroid or the enemy
+###########################################################################
 class Debris(Sprite):
+    """
+    A piece of a gun that explodes when it's hit by an asteroid or the enemy
+    Like the gun itself, it's a triangle, though a small one
+    It has a location vector, a direction vector, and a rotation with delta
+    """
+###########################################################################
 
     #BB A piece of debris is a small triangle
     #BB Both location and direction are pygame.math.Vector2 objects
-    def __init__(self, id, location, direction):
+    def __init__(self, id, location, direction, rotdelta):
         super().__init__()
         self.id = id
         self.location = location
         self.direction = direction
 
+        self.rotation = 0
+        self.rotdelta = rotdelta
+
         #BB Create the Surface and draw a triangle on it.
         self.image = pygame.Surface((5, 8), pygame.SRCALPHA)
         self.orig_img = self.image
         pygame.draw.polygon(self.image, (255,255,0), [(0,8),(2.5,0),(5,8)])
-        self.rect = self.image.get_rect(center=(screenwidth/2, screenheight/2))
+        self.rect = self.image.get_rect(center=(location))
 
         print(f"New debris at {self.location}, dir {self.direction}, |dir| {self.direction.length()}")
 
     def update(self):
         self.location = self.location+self.direction
         self.rect = self.image.get_rect(center=self.location)
+        #BB rotation
+        self.rotation += self.rotdelta
+        self.image, self.rect = rotate_sprite(self.location.x, self.location.y, self.orig_img, self.rotation)
         #BB Dispose of the object when it reaches a border
         if self.rect.bottom < 0 or self.rect.top>screenheight or self.rect.right<0 or self.rect.left>screenwidth:
             print(f"Killing debris {self.id}")
             self.kill()
 
+###########################################################################
 class Asteroid(Sprite):
+###########################################################################
 
     def __init__(self, id, x, y, angle=45, speed=5):
         super().__init__()
@@ -235,7 +254,7 @@ while running:
         if len(collision)>0:
             for id in range(10):
                 speed = random.uniform(0.1, 2)
-                d = Debris(id, gun.imgvec, Vector2(0, speed).rotate(id*36))
+                d = Debris(id, gun.imgvec, Vector2(0, speed).rotate(id*36), random.uniform(0.1,6))
                 debris.add(d)
 
     #BB display all objects on the screen
