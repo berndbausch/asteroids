@@ -118,9 +118,10 @@ class Debris(Sprite):
         print(f"New debris at {self.location}, dir {self.direction}, |dir| {self.direction.length()}")
 
     def update(self):
+        #BB Update the location
         self.location = self.location+self.direction
         self.rect = self.image.get_rect(center=self.location)
-        #BB rotation
+        #BB Update the rotation angle
         self.rotation += self.rotdelta
         self.image, self.rect = rotate_sprite(self.location.x, self.location.y, self.orig_img, self.rotation)
         #BB Dispose of the object when it reaches a border
@@ -130,23 +131,43 @@ class Debris(Sprite):
 
 ###########################################################################
 class Asteroid(Sprite):
+    """
+    angle is not the rotation angle but tells the direction where it moves
+    location and direction are Vector2 objects
+    """
 ###########################################################################
 
-    def __init__(self, id, x, y, angle=45, speed=5):
+    def __init__(self, id, x, y, angle=45, speed=5, rotdelta=5):
         super().__init__()
         self.id = id
         self.location = Vector2(x, y)
         self.direction = Vector2(0, speed).rotate(angle)
 
+        #BB Create the Surface and draw a square on it.
+        self.image = pygame.Surface((30, 30), pygame.SRCALPHA)
+        self.orig_img = self.image
+        pygame.draw.polygon(self.image, (255,0,0), [(0,30),(0,0),(30,0),(30,30)])
+        self.rect = self.image.get_rect(center=(self.location))
+
+        """
         self.image = pygame.Surface((30, 30))
+        self.orig_img = self.image
         self.image.fill((255, 0, 0))
         self.rect = self.image.get_rect(center=self.location)
+        """
+        
+        self.rotation = 0
+        self.rotdelta = rotdelta
 
-        print(f"asteroid {self.id}, loc {self.location}, dir {self.direction}")
+        print(f"asteroid {self.id}, loc {self.location}, dir {self.direction}, rotdelta {self.rotdelta}")
 
     def update(self):
-        self.location = self.location+self.direction
+        #BB Update the location
+        self.location += self.direction
         self.rect = self.image.get_rect(center=self.location)
+        #BB Update the rotation angle
+        self.rotation += self.rotdelta
+        self.image, self.rect = rotate_sprite(self.location.x, self.location.y, self.orig_img, self.rotation)
         #if self.id==0:
             #print(f"new loc {self.location}, left {self.rect.left}, right {self.rect.right}, top {self.rect.top}, bottom {self.rect.bottom}")
         #BB Wrap around when object reaches a border
@@ -187,7 +208,8 @@ for id in range(22):
     
     angle = random.randint(0, 360)
     speed = random.uniform(0.1, 2)
-    asteroids.add(Asteroid(id, x, y, angle, speed))
+    rotdelta = random.uniform(0.1,5)
+    asteroids.add(Asteroid(id, x, y, angle, speed, rotdelta))
 
 running = True
 pausing = False
