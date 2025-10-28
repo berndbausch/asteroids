@@ -146,7 +146,14 @@ class Asteroid(Sprite):
         #BB Create the Surface and draw a square on it.
         self.image = pygame.Surface((30, 30), pygame.SRCALPHA)
         self.orig_img = self.image
-        pygame.draw.polygon(self.image, (255,0,0), [(0,30),(0,0),(30,0),(30,30)])
+        ###pygame.draw.polygon(self.image, (255,0,0), [(0,30),(0,0),(30,0),(30,30)])
+        hexagon = [(0+random.uniform(0,5),15+random.uniform(-2,2)),(10+random.uniform(-2,2),0+random.uniform(0,2)),(20+random.uniform(-2,2),0+random.uniform(0,5)),(30+random.uniform(-5,0),15+random.uniform(-2,2)),(20+random.uniform(-2,2),30+random.uniform(-5,0)),(10+random.uniform(-2,2),30+random.uniform(-5,0))]
+        vertices = hexagon
+        #for i in range(random.randint(4,6)):
+        #    vertices.append((random.randint(0,30), random.randint(0,30)))
+
+        pygame.draw.polygon(self.image, (255,0,0), vertices)
+        ###pygame.draw.polygon(self.image, (255,0,0), [(0,30),(0,0),(30,0),(30,30)])
         self.rect = self.image.get_rect(center=(self.location))
 
         """
@@ -168,8 +175,6 @@ class Asteroid(Sprite):
         #BB Update the rotation angle
         self.rotation += self.rotdelta
         self.image, self.rect = rotate_sprite(self.location.x, self.location.y, self.orig_img, self.rotation)
-        #if self.id==0:
-            #print(f"new loc {self.location}, left {self.rect.left}, right {self.rect.right}, top {self.rect.top}, bottom {self.rect.bottom}")
         #BB Wrap around when object reaches a border
         if self.rect.bottom < 0:
             self.rect.top = screenheight
@@ -184,7 +189,7 @@ class Asteroid(Sprite):
             self.rect.right = 0
             self.location.update(self.rect.center)
 
-# Create groups
+# Create sprite groups
 gungroup = Group()
 bullets = Group()
 asteroids = Group()
