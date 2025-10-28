@@ -3,6 +3,13 @@ from pygame.sprite import Sprite, Group
 from pygame.math import Vector2
 import random
 
+def rotate_sprite(x, y, image, rotation):
+    #BB transform.rotate() goes counter-clockwise
+    rotated_img = pygame.transform.rotate(image, rotation)
+    #BB correctly center the rotated image
+    rotated_rect = rotated_img.get_rect(center = image.get_rect(center=(x, y)).center)
+    return rotated_img, rotated_rect
+
 screenwidth = 1000
 screenheight = 600
 
@@ -22,10 +29,12 @@ class Shooter(Sprite):
         super().__init__()
 
         #BB Create the Surface and draw a triangle on it.
+        self.xpos = screenwidth/2
+        self.ypos = screenheight/2
         self.image = pygame.Surface((20, 30), pygame.SRCALPHA)
-        self.original = self.image
+        self.orig_img = self.image
         pygame.draw.polygon(self.image, (255,255,0), [(0,30),(10,0),(20,30)])
-        self.rect = self.image.get_rect(center=(screenwidth/2, screenheight/2))
+        self.rect = self.image.get_rect(center=(self.xpos, self.ypos))
 
         #BB Vector of shooter's center
         self.imgvec = Vector2(self.rect.center)
@@ -42,16 +51,11 @@ class Shooter(Sprite):
         self.rotation += self.rotdelta
 
         #BB rotate the shooter itself
-        #BB transform.rotate() goes counter-clockwise
-        rotated_img = pygame.transform.rotate(self.original, self.rotation)
-        #BB correctly center the rotated image
-        rotated_rect = rotated_img.get_rect(center = self.original.get_rect(center=(screenwidth/2, screenheight/2)).center)
-        self.image = rotated_img
-        self.rect = rotated_rect
+        self.image, self.rect = rotate_sprite(self.xpos, self.ypos, self.orig_img, self.rotation)
 
-        #BB after rotating the triangle, also update the tip's location
-        #BB this is done using vector rotation, which goes clockwise
-        #BB therefore, the rotation angle needs to be inversed
+        #BB After rotating the triangle, also update the tip's location.
+        #BB This is done using vector rotation, which goes clockwise.
+        #BB Therefore, the rotation angle needs to be inversed.
         self.tipvec = self.origtipvec.rotate(-self.rotation)
 
 class Bullet(Sprite):
@@ -93,7 +97,7 @@ class Debris(Sprite):
 
         #BB Create the Surface and draw a triangle on it.
         self.image = pygame.Surface((5, 8), pygame.SRCALPHA)
-        self.original = self.image
+        self.orig_img = self.image
         pygame.draw.polygon(self.image, (255,255,0), [(0,8),(2.5,0),(5,8)])
         self.rect = self.image.get_rect(center=(screenwidth/2, screenheight/2))
 
