@@ -123,9 +123,17 @@ gun = Shooter()
 gungroup.add(gun)
 
 # Create some asteroids
+#BB Ensure they are not too close to the gun in the center of the screen
 for id in range(22):
-    x = random.randint(50, screenwidth-50)
-    y = random.randint(50, screenheight-50)
+    if random.choice([True,False]):
+        x = random.randint(0, screenwidth/4)
+    else:
+        x = random.randint(3*screenwidth/3, screenwidth)
+    if random.choice([True,False]):
+        y = random.randint(0, screenheight/4)
+    else:
+        y = random.randint(3*screenheight/3, screenheight)
+    
     angle = random.randint(0, 360)
     speed = random.uniform(0.1, 2)
     asteroids.add(Asteroid(id, x, y, angle, speed))
@@ -176,6 +184,9 @@ while running:
         #BB Returns dictionary of all detected collisions.
         #BB Key is a bullet, value is a list of asteroids.
         #BB If no collision occurs, returns an empty dict.
+        #BB
+        #BB Here, we check collisions between all bullets and all asteroids.
+        #BB Asteroids that collide with bullets will be removed.
         collision = pygame.sprite.groupcollide(bullets, asteroids, False, True)
         if len(collision)>0:
             for coll in collision:
@@ -183,6 +194,13 @@ while running:
                 for asteroid in collision[coll]:
                     print(asteroid.id, end=",")
             print()
+
+        #BB Next, we check if the gun collides with an asteroid.
+        #BB If yes, the gun disappears and the game is over.
+        #BB In the future, the gun explodes and the asteroid breaks up.
+        collision = pygame.sprite.groupcollide(gungroup, asteroids, True, False)
+        if len(collision)>0:
+            pausing = True
 
     #BB display all objects on the screen
     screen.fill((100, 100, 100))
