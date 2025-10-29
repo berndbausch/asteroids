@@ -10,6 +10,15 @@ def rotate_sprite(x, y, image, rotation):
     rotated_rect = rotated_img.get_rect(center = image.get_rect(center=(x, y)).center)
     return rotated_img, rotated_rect
 
+"""
+To be done
+
+Function takes an asteroid and generates a list of smaller asteroids.
+List is empty if argument is already small.
+"""
+def asteroid_breakup(asteroid):
+    return []
+
 screenwidth = 1000
 screenheight = 600
 
@@ -128,35 +137,26 @@ class Debris(Sprite):
 ###########################################################################
 class Asteroid(Sprite):
     """
-    angle is not the rotation angle but tells the direction where it moves
     location and direction are Vector2 objects
     """
 ###########################################################################
 
-    # def __init__(self, id, x, y, angle=45, speed=5, rotdelta=5):
-    def __init__(self, id, location, direction, rotdelta=5):
+    def __init__(self, id, location, direction, rotdelta=5, size=40):
         super().__init__()
         self.id = id
         self.location = location
         self.direction = direction
 
         #BB Create the Surface and draw a square on it.
-        self.image = pygame.Surface((30, 30), pygame.SRCALPHA)
+        self.image = pygame.Surface((size, size), pygame.SRCALPHA)
         self.orig_img = self.image
         ###pygame.draw.polygon(self.image, (255,0,0), [(0,30),(0,0),(30,0),(30,30)])
-        hexagon = [(0+random.uniform(0,5),15+random.uniform(-2,2)),(10+random.uniform(-2,2),0+random.uniform(0,2)),(20+random.uniform(-2,2),0+random.uniform(0,5)),(30+random.uniform(-5,0),15+random.uniform(-2,2)),(20+random.uniform(-2,2),30+random.uniform(-5,0)),(10+random.uniform(-2,2),30+random.uniform(-5,0))]
+        #BB Create a randomly irregular hexagon
+        hexagon = [(0+random.uniform(0,5),size/2+random.uniform(-2,2)),(size/3+random.uniform(-2,2),0+random.uniform(0,2)),(2*size/3+random.uniform(-2,2),0+random.uniform(0,5)),(size+random.uniform(-5,0),size/2+random.uniform(-2,2)),(2*size/3+random.uniform(-2,2),size+random.uniform(-5,0)),(size/3+random.uniform(-2,2),size+random.uniform(-5,0))]
         vertices = hexagon
         pygame.draw.polygon(self.image, (255,0,0), vertices)
-        ###pygame.draw.polygon(self.image, (255,0,0), [(0,30),(0,0),(30,0),(30,30)])
         self.rect = self.image.get_rect(center=(self.location))
 
-        """
-        self.image = pygame.Surface((30, 30))
-        self.orig_img = self.image
-        self.image.fill((255, 0, 0))
-        self.rect = self.image.get_rect(center=self.location)
-        """
-        
         self.rotation = 0
         self.rotdelta = rotdelta
 
@@ -225,7 +225,16 @@ for id in range(22):
 running = True
 pausing = False
 id = 0
+
+#BB Main loop: Process events, move objects, process collisions, display objects
 while running:
+    """
+    Event processing.
+    When window is closed (QUIT event), exit.
+    Key events are pushing a or s for rotating the gun, space for shooting a bullet,
+    pushing x for exiting, p for pausing.
+    The gun continues rotating until a KEYUP event for a or s occurs.
+    """
     for event in pygame.event.get():
         match event.type:
             case pygame.QUIT:
@@ -257,32 +266,44 @@ while running:
                 if event.key==pygame.K_a or event.key==pygame.K_s:
                     gun.rotdelta = 0
 
+    """
+    Move and rotate all objects on the screen.
+    Detect and process collisions between bullet and asteroids
+    as well as gun and an asteroid
+    """
     if not pausing:
         asteroids.update()
         gungroup.update()
         bullets.update()
         debris.update()
 
-        # Detect collisions
-        #BB groupcollide(group1, group2, dokill1, dokill2, collided = None)
-        #BB The dokill parameters determine if collided elements are removed
-        #BB Returns dictionary of all detected collisions.
-        #BB Key is a bullet, value is a list of asteroids.
-        #BB If no collision occurs, returns an empty dict.
-        #BB
-        #BB Here, we check collisions between all bullets and all asteroids.
-        #BB Asteroids that collide with bullets will be removed.
-        collision = pygame.sprite.groupcollide(bullets, asteroids, False, True)
+        """
+        Detect collisions.
+        groupcollide(group1, group2, dokill1, dokill2, collided = None)
+        The dokill parameters determine if collided elements are removed.
+        Returns dictionary of all detected collisions.
+        In the dictionary, key is a bullet, value is a list of asteroids.
+        If no collision occurs, returns an empty dict.
+        
+        Here, we check collisions between all bullets and all asteroids.
+        Asteroids that collide with bullets will be removed.
+        """
+        collision = pygame.sprite.groupcollide(bullets, asteroids, False, False)
         if len(collision)>0:
             for coll in collision:
                 print(coll.id, end=": ")
                 for asteroid in collision[coll]:
+                    for new_asteroid in asteroid_breakup(asteroid):
+                        asteroids.add(new_asteroid)
+                    asteroids.remove(asteroid)
                     print(asteroid.id, end=",")
             print()
 
-        #BB Next, we check if the gun collides with an asteroid.
-        #BB If yes, the gun explodes and the game is over.
-        #BB In the future, the colliding asteroid breaks up.
+        """
+        Next, we check if the gun collides with an asteroid.
+        If yes, the gun explodes and the game is over.
+        In the future, the colliding asteroid breaks up.
+        """
         collision = pygame.sprite.groupcollide(gungroup, asteroids, True, False)
         if len(collision)>0:
             for id in range(10):
@@ -290,7 +311,9 @@ while running:
                 d = Debris(id, gun.imgvec, Vector2(0, speed).rotate(id*36), random.uniform(0.1,6))
                 debris.add(d)
 
-    #BB display all objects on the screen
+    """
+    Display all objects on the screen
+    """
     screen.fill((100, 100, 100))
     bullets.draw(screen)
     asteroids.draw(screen)
