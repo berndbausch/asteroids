@@ -13,10 +13,6 @@ def rotate_sprite(x, y, image, rotation):
 screenwidth = 1000
 screenheight = 600
 
-pygame.init()
-screen = pygame.display.set_mode((screenwidth, screenheight))
-clock = pygame.time.Clock()
-
 ###########################################################################
 class Shooter(Sprite):
     """
@@ -137,11 +133,12 @@ class Asteroid(Sprite):
     """
 ###########################################################################
 
-    def __init__(self, id, x, y, angle=45, speed=5, rotdelta=5):
+    # def __init__(self, id, x, y, angle=45, speed=5, rotdelta=5):
+    def __init__(self, id, location, direction, rotdelta=5):
         super().__init__()
         self.id = id
-        self.location = Vector2(x, y)
-        self.direction = Vector2(0, speed).rotate(angle)
+        self.location = location
+        self.direction = direction
 
         #BB Create the Surface and draw a square on it.
         self.image = pygame.Surface((30, 30), pygame.SRCALPHA)
@@ -149,9 +146,6 @@ class Asteroid(Sprite):
         ###pygame.draw.polygon(self.image, (255,0,0), [(0,30),(0,0),(30,0),(30,30)])
         hexagon = [(0+random.uniform(0,5),15+random.uniform(-2,2)),(10+random.uniform(-2,2),0+random.uniform(0,2)),(20+random.uniform(-2,2),0+random.uniform(0,5)),(30+random.uniform(-5,0),15+random.uniform(-2,2)),(20+random.uniform(-2,2),30+random.uniform(-5,0)),(10+random.uniform(-2,2),30+random.uniform(-5,0))]
         vertices = hexagon
-        #for i in range(random.randint(4,6)):
-        #    vertices.append((random.randint(0,30), random.randint(0,30)))
-
         pygame.draw.polygon(self.image, (255,0,0), vertices)
         ###pygame.draw.polygon(self.image, (255,0,0), [(0,30),(0,0),(30,0),(30,30)])
         self.rect = self.image.get_rect(center=(self.location))
@@ -189,6 +183,16 @@ class Asteroid(Sprite):
             self.rect.right = 0
             self.location.update(self.rect.center)
 
+###########################################################################
+    """
+    Main code starts here
+    """
+###########################################################################
+
+pygame.init()
+screen = pygame.display.set_mode((screenwidth, screenheight))
+clock = pygame.time.Clock()
+
 # Create sprite groups
 gungroup = Group()
 bullets = Group()
@@ -214,7 +218,9 @@ for id in range(22):
     angle = random.randint(0, 360)
     speed = random.uniform(0.1, 2)
     rotdelta = random.uniform(0.1,5)
-    asteroids.add(Asteroid(id, x, y, angle, speed, rotdelta))
+    
+    #BB Position and direction are converted to Vector2 objects
+    asteroids.add(Asteroid(id, Vector2(x, y), Vector2(0, speed).rotate(angle), rotdelta))
 
 running = True
 pausing = False
@@ -275,8 +281,8 @@ while running:
             print()
 
         #BB Next, we check if the gun collides with an asteroid.
-        #BB If yes, the gun disappears and the game is over.
-        #BB In the future, the gun explodes and the asteroid breaks up.
+        #BB If yes, the gun explodes and the game is over.
+        #BB In the future, the colliding asteroid breaks up.
         collision = pygame.sprite.groupcollide(gungroup, asteroids, True, False)
         if len(collision)>0:
             for id in range(10):
